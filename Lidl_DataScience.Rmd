@@ -1,0 +1,89 @@
+---
+title: 'Case Study: Expanding our candy brand'
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(caret)
+library(skimr)
+```
+
+
+```{r read the csv file}
+
+Raw_Data <- read.csv("D:\\Sunil\\JobSearch\\Lidl\\data-master\\data-master\\candy-power-ranking\\candy-data.csv")
+
+```
+
+
+
+```{r}
+
+summary(Raw_Data[11:13])
+#correlation between the win percent and other variables
+cor(Raw_Data[2:12],Raw_Data$winpercent)
+```
+
+```{r}
+Raw_Data[which(Raw_Data$winpercent==min(Raw_Data$winpercent)),]
+
+```
+```{r}
+Raw_Data[which(Raw_Data$winpercent==max(Raw_Data$winpercent)),]
+```
+```{r}
+Raw_Data$Type <- (Raw_Data$chocolate* 1) + (Raw_Data$fruity* 2) +  (Raw_Data$caramel * 4) + (Raw_Data$peanutyalmondy* 8) + (Raw_Data$nougat* 16) + (Raw_Data$crispedricewafer* 32) + (Raw_Data$hard* 64) + (Raw_Data$bar* 128) + (Raw_Data$pluribus* 256)     
+
+
+
+
+```
+```{r}
+control <- trainControl(method="repeatedcv", # repeatedcv / adaptive_cv
+                        number = 13, repeats =5, 
+                        verbose = FALSE, search = "grid",
+                        allowParallel = TRUE)
+metric <- "RMSE"
+tuneLength = 13
+```
+
+```{r}
+fitDT <- train(winpercent~chocolate+fruity+caramel+peanutyalmondy+nougat+crispedricewafer+hard+bar+pluribus+sugarpercent+pricepercent+Type,data = Raw_Data,method="rpart")
+               
+```
+
+```{r}
+skimmed <- skim(Raw_Data)
+```
+
+```{r}
+Raw_Data<-Raw_Data %>% dplyr::mutate(sum = rowSums(.[2:10]))
+
+Raw_Data$winpercentby100 <- Raw_Data$winpercent/100
+
+Raw_Data$SugarPriceRatio <- Raw_Data$sugarpercent/Raw_Data$pricepercent
+Raw_Data$WinPriceRatio <- Raw_Data$winpercentby100/Raw_Data$pricepercent
+```
+```{r}
+p <- ggplot(data = Raw_Data, aes(x =winpercent , y = sugarpercent, color = chocolate)) +
+geom_point(size=2) 
+```
+
+```{r}
+Unique_candy_data <- plyr::count(Raw_Data[2:10])
+Unique_candy_data$Type <- (Unique_candy_data$chocolate* 1) + (Unique_candy_data$fruity* 2) +  (Unique_candy_data$caramel * 4) + (Unique_candy_data$peanutyalmondy* 8) + (Unique_candy_data$nougat* 16) + (Unique_candy_data$crispedricewafer* 32) + (Unique_candy_data$hard* 64) + (Unique_candy_data$bar* 128) + (Unique_candy_data$pluribus* 256)   
+```
+
+```{r}
+library(corrplot)
+corrplot(cor(Raw_Data[,2:13]))
+```
+
